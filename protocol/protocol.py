@@ -1,6 +1,27 @@
 from click import command
 
 
+# Protocol Messages
+# In this dictionary we will have all the client and server command names
+commands_dict = {
+    "LOGIN": {
+        "parameters": {"name": "username", "name": "password"},
+        "message": {"enter name and password divided by #"},
+    },
+    "SEND_ANSWER": {"parameters": {"name": "id", "name": "choice"}},
+    "MY_SCORE": {"parameters": {}},
+}
+
+PROTOCOL_CLIENT = {
+    "login_msg": "LOGIN",
+    "logout_msg": "LOGOUT",
+}  # .. Add more commands if needed
+
+PROTOCOL_SERVER = {
+    "login_ok_msg": "LOGIN_OK",
+    "login_failed_msg": "ERROR",
+}  # ..  Add more commands if needed
+
 CMD_FIELD_LENGTH = 16  # Exact length of cmd field (in bytes)
 LENGTH_FIELD_LENGTH = 4  # Exact length of length field (in bytes)
 MAX_DATA_LENGTH = (
@@ -14,47 +35,19 @@ DELIMITER = "|"  # Delimiter character in protocol
 DATA_DELIMITER = "#"  # Delimiter in the data part of the message
 
 
-# Protocol Messages
-# In this dictionary we will have all the client and server command names
-commands_dict = {
-    "LOGIN": {
-        "parameters": {"name": "username", "name": "password"},
-        "message": {"enter name and password divided by #"},
-        "SEND_ANSWER": {"parameters": {"name": "id", "name": "choice"}},
-        "MY_SCORE": {"parameters": {}},
-    }
-}
-
-PROTOCOL_CLIENT = {
-    "login_msg": "LOGIN",
-    "logout_msg": "LOGOUT",
-}  # .. Add more commands if needed
-
-PROTOCOL_SERVER = {
-    "login_ok_msg": "LOGIN_OK",
-    "login_failed_msg": "ERROR",
-}  # ..  Add more commands if needed
-
-# Other constants
-
-ERROR_RETURN = None  # What is returned in case of an error
-
-
 def build_message(cmd, data):
-    message_fields = {}
-    if proper_command(cmd):
-        message_fields.append(cmd)
-        message_length = len(data)
-        message_fields.append(message_length)
-        message_fields.append(data)
-        full_msg = join_data(message_fields)
-        return full_msg
-    return None
-    """
-    Gets command name (str) and data field (str) and creates a valid protocol message
-    Returns: str, or None if error occured
-    """
-    # Implement code ...
+    message_fields = []
+    if not proper_command(cmd):
+        return None
+    for i in range(len(cmd), 16):
+        cmd += " "
+    message_fields.append(cmd)
+    message_length = len(data)
+    formatted_number = str(message_length).zfill(4)
+    message_fields.append(formatted_number)
+    message_fields.append(data)
+    full_msg = join_data(message_fields)
+    return full_msg
 
 
 def parse_message(data):
@@ -63,17 +56,22 @@ def parse_message(data):
     Returns: cmd (str), data (str). If some error occured, returns None, None
     """
     # Implement code ...
-    message_fields = data.split("|")
-    command = message_fields[0]
-    data_length = int(message_fields[1])
-    data = message_fields[2]
-    if proper_command(command):
-        if 0 <= data_length < 10000 and proper_parameters(command, data):
-            return command, data
+    if has_at_least_two_pipes(data):
+        message_fields = data.split("|")
+        command = message_fields[0]
+        command = command.strip()
+        data_length = message_fields[1]
+        if is_it_a_number(data_length):
+            data_length = int(message_fields[1])
+            data = message_fields[2]
+            if proper_command(command):
+                if (
+                    0 <= data_length < 10000
+                    and proper_parameters(command, data)
+                    and data_length == len(data)
+                ):
+                    return command, data
     return None, None
-    # The function should return 2 values
-
-    return cmd, msg
 
 
 def split_data(msg, expected_fields):
@@ -102,10 +100,7 @@ def join_data(msg_fields):
 
 
 def proper_command(command):
-    for key, inner_dict in commands_dict.items():
-        if command in inner_dict.values():
-            return True
-        return False
+    return command in commands_dict.keys()
 
 
 def proper_parameters(command, data):
@@ -116,3 +111,15 @@ def proper_parameters(command, data):
         if "#".count(data) < number_of_dividers:
             return False
     return True
+
+
+def is_it_a_number(value):
+    try:
+        int(value)
+        return True
+    except ValueError:
+        return False
+
+
+def has_at_least_two_pipes(input_string):
+    return input_string.count("|") >= 2

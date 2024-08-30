@@ -16,7 +16,6 @@ def check_build(input_cmd, input_data, expected_output):
 
 def check_parse(msg_str, expected_output):
     print("Input: ", msg_str, "\nExpected output: ", expected_output)
-
     try:
         output = protocol.parse_message(msg_str)
     except Exception as e:
