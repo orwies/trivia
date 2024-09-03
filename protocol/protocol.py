@@ -1,41 +1,16 @@
-from click import command
-
+from consts import (
+    COMMANDS_DICT,
+)
 
 # Protocol Messages
 # In this dictionary we will have all the client and server command names
-commands_dict = {
-    "LOGIN": {
-        "parameters": {"name": "username", "name": "password"},
-        "message": {"enter name and password divided by #"},
-    },
-    "SEND_ANSWER": {"parameters": {"name": "id", "name": "choice"}},
-    "MY_SCORE": {"parameters": {}},
-}
 
-PROTOCOL_CLIENT = {
-    "login_msg": "LOGIN",
-    "logout_msg": "LOGOUT",
-}  # .. Add more commands if needed
-
-PROTOCOL_SERVER = {
-    "login_ok_msg": "LOGIN_OK",
-    "login_failed_msg": "ERROR",
-}  # ..  Add more commands if needed
-
-CMD_FIELD_LENGTH = 16  # Exact length of cmd field (in bytes)
-LENGTH_FIELD_LENGTH = 4  # Exact length of length field (in bytes)
-MAX_DATA_LENGTH = (
-    10**LENGTH_FIELD_LENGTH - 1
-)  # Max size of data field according to protocol
-MSG_HEADER_LENGTH = (
-    CMD_FIELD_LENGTH + 1 + LENGTH_FIELD_LENGTH + 1
-)  # Exact size of header (CMD+LENGTH fields)
-MAX_MSG_LENGTH = MSG_HEADER_LENGTH + MAX_DATA_LENGTH  # Max size of total message
-DELIMITER = "|"  # Delimiter character in protocol
-DATA_DELIMITER = "#"  # Delimiter in the data part of the message
+{command: "login", parameters: {username: "user", password: "password"}}
+{command: "get scores"}
 
 
 def build_message(cmd, data):
+
     message_fields = []
     if not proper_command(cmd):
         return None
@@ -100,11 +75,11 @@ def join_data(msg_fields):
 
 
 def proper_command(command):
-    return command in commands_dict.keys()
+    return command in COMMANDS_DICT.keys()
 
 
 def proper_parameters(command, data):
-    parameters = commands_dict[command]["parameters"]
+    parameters = COMMANDS_DICT[command]["parameters"]
     number_of_parameters = len(parameters)
     number_of_dividers = number_of_parameters - 1
     if number_of_parameters > 0:

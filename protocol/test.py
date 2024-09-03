@@ -1,4 +1,5 @@
 import protocol
+import consts
 
 
 def check_build(input_cmd, input_data, expected_output):
@@ -42,7 +43,7 @@ def main():
     # cmd too long
     check_build("0123456789ABCDEFG", "", None)
     # msg too long
-    check_build("A", "A" * (protocol.MAX_DATA_LENGTH + 1), None)
+    check_build("A", "A" * (consts.MAX_DATA_LENGTH + 1), None)
 
     # PARSE
 
