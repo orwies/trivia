@@ -1,27 +1,25 @@
 from consts import (
-    COMMANDS_DICT,
+    MAX_DATA_LENGTH,
+    DELIMITER,
+    LENGTH_FIELD_LENGTH,
+    CMD_FIELD_LENGTH,
+    COMMANDS,
+    ERROR_RETURN,
 )
-
-# Protocol Messages
-# In this dictionary we will have all the client and server command names
-
-{command: "login", parameters: {username: "user", password: "password"}}
-{command: "get scores"}
 
 
 def build_message(cmd, data):
+    """
+    Gets command name and data field and creates a valid protocol message
+    Returns: str, or None if error occured
+    """
+    if cmd not in COMMANDS or len(data) > MAX_DATA_LENGTH:
+        return ERROR_RETURN
 
-    message_fields = []
-    if not proper_command(cmd):
-        return None
-    for i in range(len(cmd), 16):
-        cmd += " "
-    message_fields.append(cmd)
-    message_length = len(data)
-    formatted_number = str(message_length).zfill(4)
-    message_fields.append(formatted_number)
-    message_fields.append(data)
-    full_msg = join_data(message_fields)
+    cmd = cmd.ljust(CMD_FIELD_LENGTH)
+    data_length = str(len(data)).zfill(LENGTH_FIELD_LENGTH)
+    message_fields = [cmd, data_length, data]
+    full_msg = DELIMITER.join(message_fields)
     return full_msg
 
 
@@ -30,71 +28,21 @@ def parse_message(data):
     Parses protocol message and returns command name and data field
     Returns: cmd (str), data (str). If some error occured, returns None, None
     """
-    # Implement code ...
-    if has_at_least_two_pipes(data):
-        message_fields = data.split("|")
-        command = message_fields[0]
-        command = command.strip()
-        data_length = message_fields[1]
-        if is_it_a_number(data_length):
-            data_length = int(message_fields[1])
-            data = message_fields[2]
-            if proper_command(command):
-                if (
-                    0 <= data_length < 10000
-                    and proper_parameters(command, data)
-                    and data_length == len(data)
-                ):
-                    return command, data
-    return None, None
+    if data.count(DELIMITER) < 2:
+        return ERROR_RETURN, ERROR_RETURN
 
+    message_fields = data.split(DELIMITER)
+    command = message_fields[0].strip()
+    if command not in COMMANDS:
+        return ERROR_RETURN, ERROR_RETURN
 
-def split_data(msg, expected_fields):
-    """
-    Helper method. gets a string and number of expected fields in it. Splits the string
-    using protocol's data field delimiter (|#) and validates that there are correct number of fields.
-    Returns: list of fields if all ok. If some error occured, returns None
-    """
-    max_split = expected_fields - 1
-    string_list = msg.split("#", max_split)
-    return string_list
+    data_length = message_fields[1].strip()
+    if not data_length.isnumeric():
+        return ERROR_RETURN, ERROR_RETURN
 
+    int_data_length = int(data_length)
+    data = message_fields[2]
+    if int_data_length > MAX_DATA_LENGTH or int_data_length != len(data):
+        return ERROR_RETURN, ERROR_RETURN
 
-# Implement code ...
-
-
-def join_data(msg_fields):
-    """
-    Helper method. Gets a list, joins all of it's fields to one string divided by the data delimiter.
-    Returns: string that looks like cell1#cell2#cell3
-    """
-    # Implement code ...
-    separator = "|"
-    joined_items = separator.join(msg_fields)
-    return joined_items
-
-
-def proper_command(command):
-    return command in COMMANDS_DICT.keys()
-
-
-def proper_parameters(command, data):
-    parameters = COMMANDS_DICT[command]["parameters"]
-    number_of_parameters = len(parameters)
-    number_of_dividers = number_of_parameters - 1
-    if number_of_parameters > 0:
-        if "#".count(data) < number_of_dividers:
-            return False
-    return True
-
-
-def is_it_a_number(value):
-    try:
-        int(value)
-        return True
-    except ValueError:
-        return False
-
-
-def has_at_least_two_pipes(input_string):
-    return input_string.count("|") >= 2
+    return command, data
