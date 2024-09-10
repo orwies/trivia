@@ -36,14 +36,14 @@ COMMANDS = [
     "NO_QUESTIONS",
 ]
 ERROR_RETURN = None  # What is returned in case of an error
-CMD_FIELD_LENGTH = 16  # Exact length of cmd field (in bytes)
+COMMAND_FIELD_LENGTH = 16  # Exact length of command field (in bytes)
 LENGTH_FIELD_LENGTH = 4  # Exact length of length field (in bytes)
 MAX_DATA_LENGTH = (
     10**LENGTH_FIELD_LENGTH - 1
 )  # Max size of data field according to protocol
 MSG_HEADER_LENGTH = (
-    CMD_FIELD_LENGTH + 1 + LENGTH_FIELD_LENGTH + 1
-)  # Exact size of header (CMD+LENGTH fields)
+    COMMAND_FIELD_LENGTH + 1 + LENGTH_FIELD_LENGTH + 1
+)  # Exact size of header (COMMAND+LENGTH fields)
 MAX_MSG_LENGTH = MSG_HEADER_LENGTH + MAX_DATA_LENGTH  # Max size of total message
 DELIMITER = "|"  # Delimiter character in protocol
 DATA_DELIMITER = "#"  # Delimiter in the data part of the message
