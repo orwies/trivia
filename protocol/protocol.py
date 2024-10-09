@@ -5,6 +5,7 @@ from protocol.consts import (
     COMMAND_FIELD_LENGTH,
     COMMANDS,
     ERROR_RETURN,
+    MENU
 )
 
 
@@ -46,3 +47,7 @@ def parse_message(data):
         return ERROR_RETURN, ERROR_RETURN
 
     return command, data
+
+def print_menu():
+    for key, description in MENU:
+        print(f"{key:<2} {description}")
