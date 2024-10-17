@@ -16,7 +16,7 @@ PROTOCOL_SERVER = {
     "wrong_answer_msg": "WRONG_ANSWER",
     "your_score_msg": "YOUR_SCORE",
     "login_failed_msg": "ERROR",
-    "no_questions_msg": "NO_QUESTIONS"
+    "no_questions_msg": "NO_QUESTIONS",
 }
 COMMANDS = [
     "LOGIN",
@@ -37,11 +37,11 @@ COMMANDS = [
     "NO_QUESTIONS",
 ]
 MENU = [
-    ('p', 'Play a trivia question'),
-    ('s', 'Get my score'),
-    ('h', 'Get high score'),
-    ('l', 'Get logged users')
-    ('q', 'Quit')
+    ("p", "Play a trivia question"),
+    ("s", "Get my score"),
+    ("h", "Get high score"),
+    ("l", "Get logged users"),
+    ("q", "Quit"),
 ]
 ERROR_RETURN = None  # What is returned in case of an error
 COMMAND_FIELD_LENGTH = 16  # Exact length of command field (in bytes)

@@ -1,5 +1,5 @@
 import socket
-from protocol.protocol import build_message, parse_message, print_menu
+from protocol.protocol import build_message, parse_message, print_menu, print_questions
 from protocol.consts import PROTOCOL_CLIENT, MAX_MSG_LENGTH, ERROR_RETURN, PROTOCOL_SERVER
 
 SERVER_IP = "127.0.0.1"  # Our server will run on same computer as client
@@ -53,7 +53,6 @@ def login(conn):
     password = input("Please enter password:\n")
     data = f"{username}#{password}"
     command, _ = build_send_recv_parse(conn, PROTOCOL_CLIENT["login_msg"], data)
-    print(command)
     return command
 
 
@@ -75,6 +74,7 @@ def get_highscore(conn):
 def play_question(conn):
     command, data = build_send_recv_parse(conn, PROTOCOL_CLIENT["get_question_msg"])
     if command == PROTOCOL_SERVER["no_questions_msg"]:
+        print("no more questions a")
         conn.close()
     elif command == ERROR_RETURN:
         print("didn't enter a valid answer!")
@@ -90,7 +90,7 @@ def play_question(conn):
     ('3', parts[4]),
     ('4', parts[5])
 ]
-        print(answer_options)
+        print(print_questions(answer_options))
         return question_id 
         
 def send_answer(conn, question_id, answer_choice):
@@ -112,31 +112,32 @@ def main():
         my_socket = connect()
         while True:
             login_result = login(my_socket)
-            if login_result == ERROR_RETURN:
-                my_socket.close()
+            if login_result == "ERROR":
+                print("enter valid username and password!")
                 break
             else:
                 while True:
                     print_menu()
                     command_choice = input("please enter your choice: ")
                     if command_choice == "p":
-                        question_id = play_question
+                        question_id = play_question(my_socket)
                         answer_choice = input("please enter your answer [1-4]: ")
                         send_answer(my_socket, question_id, answer_choice)
-                    if command_choice == "s":
+                    elif command_choice == "s":
                         my_score_result = get_score(my_socket)
                         if my_score_result == ERROR_RETURN:
                             print("an error occurred!")
                         else:
                             print(my_score_result)
-                    if command_choice == "h":
+                    elif command_choice == "h":
                         highscore = get_highscore(my_socket)
                         print(highscore)
-                    if command_choice == "l":
+                    elif command_choice == "l":
                         get_logged_users(my_socket)
-                    if command_choice == "q":
-                        logout(my_socket)
+                    elif command_choice == "q":
                         break
+                    else:
+                        print("enter a valid commad!")
             
 
 

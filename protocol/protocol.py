@@ -51,3 +51,9 @@ def parse_message(data):
 def print_menu():
     for key, description in MENU:
         print(f"{key:<2} {description}")
+
+
+
+def print_questions(questions_menu):
+    for key, description in questions_menu:
+        print(f"{key:<2} {description}")
