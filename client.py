@@ -57,8 +57,8 @@ def login(conn):
     username = input("Please enter username:\n")
     password = input("Please enter password:\n")
     data = f"{username}#{password}"
-    command, _ = build_send_recv_parse(conn, PROTOCOL_CLIENT["login_msg"], data)
-    return command
+    command, data = build_send_recv_parse(conn, PROTOCOL_CLIENT["login_msg"], data)
+    return command, data
 
 
 def logout(conn):
@@ -118,38 +118,37 @@ def get_logged_users(conn):
 
 
 def main():
+    my_socket = connect()
     while True:
-        my_socket = connect()
-        while True:
-            login_result = login(my_socket)
-            if login_result == "ERROR":
-                print("enter valid username and password!")
-            else:
-                break
+        login_result, msg = login(my_socket)
+        if login_result == "ERROR":
+            print(msg)
+        else:
+            break
 
-        while True:
-            print_menu()
-            command_choice = input("please enter your choice: ")
-            if command_choice == "p":
-                question_id = play_question(my_socket)
-                answer_choice = input("please enter your answer [1-4]: ")
-                send_answer(my_socket, question_id, answer_choice)
-            elif command_choice == "s":
-                my_score_result = get_score(my_socket)
-                if my_score_result == ERROR_RETURN:
-                    print("an error occurred!")
-                else:
-                    print(my_score_result)
-            elif command_choice == "h":
-                highscore = get_highscore(my_socket)
-                print(highscore)
-            elif command_choice == "l":
-                get_logged_users(my_socket)
-            elif command_choice == "q":
-                logout(my_socket)
-                break
+    while True:
+        print_menu()
+        command_choice = input("please enter your choice: ")
+        if command_choice == "p":
+            question_id = play_question(my_socket)
+            answer_choice = input("please enter your answer [1-4]: ")
+            send_answer(my_socket, question_id, answer_choice)
+        elif command_choice == "s":
+            my_score_result = get_score(my_socket)
+            if my_score_result == ERROR_RETURN:
+                print("an error occurred!")
             else:
-                print("enter a valid commad!")
+                print(my_score_result)
+        elif command_choice == "h":
+            highscore = get_highscore(my_socket)
+            print(highscore)
+        elif command_choice == "l":
+            get_logged_users(my_socket)
+        elif command_choice == "q":
+            logout(my_socket)
+            break
+        else:
+            print("enter a valid commad!")
 
 
 if __name__ == "__main__":
