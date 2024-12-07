@@ -2,11 +2,10 @@ import socket
 import select
 import random
 
-from protocol.protocol import build_message, parse_message, print_menu, print_questions
+from protocol.protocol import build_message, parse_message
 from protocol.consts import (
     PROTOCOL_CLIENT,
     MAX_MSG_LENGTH,
-    ERROR_RETURN,
     PROTOCOL_SERVER,
 )
 
@@ -30,7 +29,6 @@ def build_and_send_message(conn, command, data=""):
     Paramaters: conn (socket object), command (str), data (str)
     Returns: Nothing
     """
-    # Implement Code
     global messages_to_send
     full_msg = build_message(command, data).encode()
     print("[SERVER] ", full_msg)  # Debug print
@@ -56,6 +54,7 @@ def recv_message_and_parse(conn):
 def print_client_sockets():
     for key in logged_users:
         print(key)
+
 
 # Data Loaders #
 
@@ -123,22 +122,22 @@ def create_random_question():
     random_question_id = random.choice(list(questions_dict.keys()))
     question = questions_dict[random_question_id]["question"]
     answers_list = questions_dict[random_question_id]["answers"]
-    answers = '#'.join(answers_list)
+    answers = "#".join(answers_list)
     data = f"{str(random_question_id)}#{question}#{answers}"
     return data
 
 
+def handle_question_message(conn, data=None):
+    build_and_send_message(
+        conn, PROTOCOL_SERVER["your_question_msg"], create_random_question()
+    )
 
-def handle_question_message(conn, data = None):
-    build_and_send_message(conn, PROTOCOL_SERVER["your_question_msg"], create_random_question())
 
-
-
-def handle_answer_message(conn, username, data):
+def handle_answer_message(conn, username, data: str):
     questions_dict = load_questions()
-    question_id_and_answer = data.split('#')
-    question_id, answer = question_id_and_answer[0], question_id_and_answer[1]
-    right_answer = str(questions_dict[int(question_id)]["correct"])
+    question_id_and_answer = data.split("#")
+    question_id, answer = int(question_id_and_answer[0]), question_id_and_answer[1]
+    right_answer = str(questions_dict[question_id]["correct"])
     print(f"right answer: {right_answer} , user answer: {answer}")
     if answer == right_answer:
         users[username]["score"] += 5
@@ -147,27 +146,28 @@ def handle_answer_message(conn, username, data):
         build_and_send_message(conn, PROTOCOL_SERVER["wrong_answer_msg"], right_answer)
 
 
-def handle_getscore_message(conn, data = None):
+def handle_getscore_message(conn, data=None):
     logged_user_username = logged_users[conn.getpeername()]
-    build_and_send_message(conn, PROTOCOL_SERVER["your_score_msg"], str(users[logged_user_username]["score"]))
-    # Implement this in later chapters
+    build_and_send_message(
+        conn,
+        PROTOCOL_SERVER["your_score_msg"],
+        str(users[logged_user_username]["score"]),
+    )
 
 
-def handle_highscore_message(conn, data = None):
-    names_scores = [(name, user['score']) for name, user in users.items()]
+def handle_highscore_message(conn, data=None):
+    names_scores = [(name, user["score"]) for name, user in users.items()]
     sorted_names_scores = sorted(names_scores, key=lambda x: x[1], reverse=True)
-    result = str(', '.join(f"{name}: {score}" for name, score in sorted_names_scores))
+    result = str(", ".join(f"{name}: {score}" for name, score in sorted_names_scores))
     build_and_send_message(conn, PROTOCOL_SERVER["all_score_message"], result)
 
 
-
-def handle_logged_message(conn, data = None):
-    result = ', '.join(str(value) for value in logged_users.values())
+def handle_logged_message(conn, data=None):
+    result = ", ".join(str(value) for value in logged_users.values())
     build_and_send_message(conn, PROTOCOL_SERVER["logged_answer_msg"], result)
 
 
-
-def handle_logout_message(conn, data = None):
+def handle_logout_message(conn: socket.socket, data=None):
     """
     Closes the given socket (in laster chapters, also remove user from logged_users dictioary)
     Recieves: socket
@@ -177,10 +177,8 @@ def handle_logout_message(conn, data = None):
     del logged_users[conn.getpeername()]
     conn.close()
 
-    # Implement code ...
 
-
-def handle_login_message(conn, data):
+def handle_login_message(conn: socket.socket, data: str):
     """
     Gets socket and message data of login message. Checks  user and pass exists and match.
     If not - sends error and finished. If all ok, sends OK message and adds user and address to logged_users
@@ -212,12 +210,11 @@ CMD_FUNCTION_DICTIONARY = {
     PROTOCOL_CLIENT["highscore_msg"]: handle_highscore_message,
     PROTOCOL_CLIENT["logged_msg"]: handle_logged_message,
     PROTOCOL_CLIENT["get_question_msg"]: handle_question_message,
-    PROTOCOL_CLIENT["send_answer_msg"]: handle_answer_message
+    PROTOCOL_CLIENT["send_answer_msg"]: handle_answer_message,
 }
 
 
-
-def handle_client_message(conn, cmd, data):
+def handle_client_message(conn: socket.socket, cmd: str, data: str):
     """
     Gets message code and data and calls the right function to handle command
     Recieves: socket, message code and data
@@ -231,7 +228,7 @@ def handle_client_message(conn, cmd, data):
         send_error(conn, "enter a valid command!")
         return None
     if cmd == PROTOCOL_CLIENT["send_answer_msg"]:
-        username =  logged_users[conn.getpeername()]
+        username = logged_users[conn.getpeername()]
         CMD_FUNCTION_DICTIONARY[cmd](conn, username, data)
         return None
     CMD_FUNCTION_DICTIONARY[cmd](conn, data)
@@ -247,7 +244,7 @@ def send_waiting_messages(ready_to_write):
 
 
 def main():
-# Initializes global users and questions dicionaries using load functions, will be used later
+    # Initializes global users and questions dicionaries using load functions, will be used later
     global users
     global questions
     users = load_user_database()
@@ -255,11 +252,13 @@ def main():
     server_socket = setup_socket()
     client_sockets = []
     while True:
-        ready_to_read, ready_to_write, in_error = select.select([server_socket] + client_sockets, client_sockets, [])
+        ready_to_read, ready_to_write, _ = select.select(
+            [server_socket] + client_sockets, client_sockets, []
+        )
         for current_socket in ready_to_read:
             if current_socket is server_socket:
-                (new_socket , client_address) = server_socket.accept()
-                print( "New client joined!" , client_address)
+                (new_socket, client_address) = server_socket.accept()
+                print("New client joined!", client_address)
                 client_sockets.append(new_socket)
                 print_client_sockets()
             else:
@@ -270,15 +269,17 @@ def main():
                         del logged_users[peername]
                     client_sockets.remove(current_socket)
                     print(f"client {client_address} disconnected.")
-                if command == PROTOCOL_CLIENT["logout_msg"]:
+
+                elif command == PROTOCOL_CLIENT["logout_msg"]:
                     handle_logout_message(current_socket)
                     client_sockets.remove(current_socket)
                     print(f"client {client_address} disconnected.")
 
                 else:
                     handle_client_message(current_socket, command, data)
-                
+
         send_waiting_messages(ready_to_write)
+
 
 if __name__ == "__main__":
     main()
