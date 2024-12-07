@@ -97,15 +97,13 @@ def play_question(conn):
             ("3", parts[4]),
             ("4", parts[5]),
         ]
-        print(print_questions(answer_options))
+        print_questions(answer_options)
         return question_id
 
 
 def send_answer(conn, question_id, answer_choice):
     id_and_choice = f"{question_id}#{answer_choice}"
-    command, data = build_send_recv_parse(
-        conn, PROTOCOL_CLIENT["get_question_msg"], id_and_choice
-    )
+    command, data = build_send_recv_parse(conn, PROTOCOL_CLIENT["send_answer_msg"], id_and_choice)
     if command == PROTOCOL_SERVER["wrong_answer_msg"]:
         print(f"Nope, correct answer is {data}")
     else:

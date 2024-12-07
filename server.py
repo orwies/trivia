@@ -34,7 +34,7 @@ def build_and_send_message(conn, command, data=""):
     global messages_to_send
     full_msg = build_message(command, data).encode()
     print("[SERVER] ", full_msg)  # Debug print
-    messages_to_send.append({conn.getpeername(): full_msg})
+    messages_to_send.append((conn, full_msg))
 
 
 def recv_message_and_parse(conn):
@@ -139,6 +139,7 @@ def handle_answer_message(conn, username, data):
     question_id_and_answer = data.split('#')
     question_id, answer = question_id_and_answer[0], question_id_and_answer[1]
     right_answer = str(questions_dict[int(question_id)]["correct"])
+    print(f"right answer: {right_answer} , user answer: {answer}")
     if answer == right_answer:
         users[username]["score"] += 5
         build_and_send_message(conn, PROTOCOL_SERVER["correct_answer_msg"])
@@ -161,7 +162,7 @@ def handle_highscore_message(conn, data = None):
 
 
 def handle_logged_message(conn, data = None):
-    result = ''.join(str(value) for value in logged_users.values())
+    result = ', '.join(str(value) for value in logged_users.values())
     build_and_send_message(conn, PROTOCOL_SERVER["logged_answer_msg"], result)
 
 
@@ -207,7 +208,6 @@ def handle_login_message(conn, data):
 
 CMD_FUNCTION_DICTIONARY = {
     PROTOCOL_CLIENT["login_msg"]: handle_login_message,
-    PROTOCOL_CLIENT["logout_msg"]: handle_logout_message,
     PROTOCOL_CLIENT["my_score_msg"]: handle_getscore_message,
     PROTOCOL_CLIENT["highscore_msg"]: handle_highscore_message,
     PROTOCOL_CLIENT["logged_msg"]: handle_logged_message,
@@ -230,13 +230,20 @@ def handle_client_message(conn, cmd, data):
     if cmd not in CMD_FUNCTION_DICTIONARY:
         send_error(conn, "enter a valid command!")
         return None
+    if cmd == PROTOCOL_CLIENT["send_answer_msg"]:
+        username =  logged_users[conn.getpeername()]
+        CMD_FUNCTION_DICTIONARY[cmd](conn, username, data)
+        return None
     CMD_FUNCTION_DICTIONARY[cmd](conn, data)
-    if cmd == PROTOCOL_CLIENT["get_question_msg"]:
-            command, answer_status_and_answer = recv_message_and_parse(conn)
-            CMD_FUNCTION_DICTIONARY[PROTOCOL_CLIENT["send_answer_msg"]](conn,
-            logged_users[conn.getpeername()], answer_status_and_answer)
     return None
-    # Implement code ...
+
+
+def send_waiting_messages(ready_to_write):
+    for message in messages_to_send:
+        client_socket, data = message
+        if client_socket in ready_to_write:
+            client_socket.send(data)
+            messages_to_send.remove(message)
 
 
 def main():
@@ -245,24 +252,33 @@ def main():
     global questions
     users = load_user_database()
     print("Welcome to Trivia Server!")
-
-    # Implement code ...
     server_socket = setup_socket()
+    client_sockets = []
     while True:
-        (client_socket, client_address) = server_socket.accept()
-        print(f"Connection from {client_address} has been established.")
-        while True:
-            try:
-                command, data = recv_message_and_parse(client_socket)
+        ready_to_read, ready_to_write, in_error = select.select([server_socket] + client_sockets, client_sockets, [])
+        for current_socket in ready_to_read:
+            if current_socket is server_socket:
+                (new_socket , client_address) = server_socket.accept()
+                print( "New client joined!" , client_address)
+                client_sockets.append(new_socket)
+                print_client_sockets()
+            else:
+                command, data = recv_message_and_parse(current_socket)
                 if command == None or data == None:
-                    handle_logout_message(client_socket)
-                    break
-                handle_client_message(client_socket, command, data)
+                    peername = current_socket.getpeername()
+                    if peername in logged_users:
+                        del logged_users[peername]
+                    client_sockets.remove(current_socket)
+                    print(f"client {client_address} disconnected.")
                 if command == PROTOCOL_CLIENT["logout_msg"]:
-                    break
-            except socket.error:
-                del logged_users[client_socket.getpeername()]
-                print(f"client {client_address} disconnected.")
+                    handle_logout_message(current_socket)
+                    client_sockets.remove(current_socket)
+                    print(f"client {client_address} disconnected.")
+
+                else:
+                    handle_client_message(current_socket, command, data)
+                
+        send_waiting_messages(ready_to_write)
 
 if __name__ == "__main__":
     main()
