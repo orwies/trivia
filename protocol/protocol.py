@@ -5,11 +5,10 @@ from protocol.consts import (
     COMMAND_FIELD_LENGTH,
     COMMANDS,
     ERROR_RETURN,
-    MENU
 )
 
 
-def build_message(command, data):
+def build_message(command: str, data: str):
     """
     Gets command name and data field and creates a valid protocol message
     Returns: str, or None if error occured
@@ -24,7 +23,7 @@ def build_message(command, data):
     return full_msg
 
 
-def parse_message(data):
+def parse_message(data: str):
     """
     Parses protocol message and returns command name and data field
     Returns: command (str), data (str). If some error occured, returns None, None
@@ -48,12 +47,7 @@ def parse_message(data):
 
     return command, data
 
-def print_menu():
-    for key, description in MENU:
-        print(f"{key:<2} {description}")
 
-
-
-def print_questions(questions_menu):
-    for key, description in questions_menu:
+def print_menu(menu: dict[str, str]):
+    for key, description in menu:
         print(f"{key:<2} {description}")

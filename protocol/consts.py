@@ -11,12 +11,13 @@ PROTOCOL_CLIENT = {
 PROTOCOL_SERVER = {
     "login_ok_msg": "LOGIN_OK",
     "logged_answer_msg": "LOGGED_ANSWER",
-    "your_question_nsg": "YOUR_QUESTION",
+    "your_question_msg": "YOUR_QUESTION",
     "correct_answer_msg": "CORRECT_ANSWER",
     "wrong_answer_msg": "WRONG_ANSWER",
     "your_score_msg": "YOUR_SCORE",
     "login_failed_msg": "ERROR",
     "no_questions_msg": "NO_QUESTIONS",
+    "all_score_message": "ALL_SCORE"
 }
 COMMANDS = [
     "LOGIN",
